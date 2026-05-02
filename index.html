@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>منصة تعليمية للتنقيب عن البيانات وتعلم الآلة</title>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Tahoma, Arial, sans-serif;
+      background: linear-gradient(135deg, #eef4ff, #f8fbff);
+      color: #1f2937;
+    }
+    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    .hero, .card {
+      background: #fff;
+      border-radius: 22px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    .hero { padding: 24px; margin-bottom: 20px; }
+    .hero h1 { margin: 0 0 10px; font-size: 32px; }
+    .hero p { margin: 0; line-height: 1.9; color: #4b5563; }
+    .main-grid { display: grid; grid-template-columns: 390px 1fr; gap: 20px; }
+    .card { padding: 18px; }
+    h2, h3, h4 { margin-top: 0; }
+    .section-title { font-size: 20px; margin-bottom: 14px; }
+    label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; }
+    input[type="file"], select, input[type="number"], input[type="text"], textarea, input[type="range"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      background: #fff;
+      font-size: 14px;
+      margin-bottom: 14px;
+      font-family: inherit;
+    }
+    textarea { min-height: 90px; resize: vertical; }
+    textarea.source-export {
+      min-height: 220px;
+      font-family: ui-monospace, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+      direction: ltr;
+      text-align: left;
+    }
+    .predict-block, .code-export-block {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+    .predict-block h3, .code-export-block h3 { margin-top: 0; font-size: 17px; }
+    .predict-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .predict-grid label { margin-bottom: 4px; font-size: 13px; }
+    .predict-grid input, .predict-grid textarea, .predict-grid select { margin-bottom: 0; }
+    .predict-results {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .pred-pill {
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+    .pred-pill .alg { font-size: 12px; color: #64748b; }
+    .pred-pill .cls { font-size: 18px; font-weight: bold; color: #1d4ed8; margin-top: 4px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      max-height: 240px;
+      overflow: auto;
+      background: #f8fafc;
+      padding: 10px;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 14px;
+    }
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 13px;
+    }
+    .checkbox-item input { width: auto; margin: 0; }
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+      margin-bottom: 10px;
+    }
+    .btn-primary { background: #2563eb; color: white; width: 100%; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-secondary { background: #0f766e; color: white; width: 100%; }
+    .btn-secondary:hover { background: #115e59; }
+    .btn-orange { background: #ea580c; color: white; width: 100%; }
+    .btn-orange:hover { background: #c2410c; }
+    .btn-purple { background: #7c3aed; color: white; width: 100%; }
+    .btn-purple:hover { background: #6d28d9; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 18px; }
+    .stat-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 18px; padding: 16px; }
+    .stat-box .label { font-size: 13px; color: #64748b; margin-bottom: 6px; }
+    .stat-box .value { font-size: 24px; font-weight: bold; }
+    .top-tabs, .inner-tabs { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+    .tab-btn { background: #e2e8f0; color: #0f172a; }
+    .tab-btn.active { background: #2563eb; color: white; }
+    .panel, .subpanel { display: none; }
+    .panel.active, .subpanel.active { display: block; }
+    .note {
+      background: #fff7ed;
+      border: 1px solid #fdba74;
+      color: #9a3412;
+      padding: 12px;
+      border-radius: 14px;
+      margin-bottom: 14px;
+      line-height: 1.8;
+    }
+    .ok { background: #ecfeff; border-color: #67e8f9; color: #155e75; }
+    .preview, .table-wrap {
+      max-height: 320px;
+      overflow: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background: white;
+      padding: 8px;
+    }
+    .pill {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: #dbeafe;
+      color: #1d4ed8;
+      font-size: 12px;
+      margin: 0 0 8px 8px;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+    th, td { border: 1px solid #e5e7eb; padding: 10px; text-align: center; }
+    th { background: #f1f5f9; }
+    canvas {
+      width: 100%;
+      max-width: 100%;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      margin-top: 14px;
+    }
+    .footer { margin-top: 18px; font-size: 13px; color: #64748b; text-align: center; }
+    @media (max-width: 1050px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .row, .three, .checkbox-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <h1>منصة تعليمية للتصنيف والتجميع والتنقيب عن الأنماط</h1>
+      <p>
+        ارفع ملف CSV ثم جرّب التصنيف بخوارزميات LR و DT و KNN والتجميع بخوارزمية K-Means والتنقيب عن الارتباطات باستخدام Apriori.
+        كما تتضمن المنصة اختيار الخصائص باستخدام الارتباط Correlation ومعالجة النصوص بتحويلها إلى Word Vectors بصورة تعليمية بسيطة مع إمكانية استعمال قاموس Lexical للتصنيف.
+      </p>
+    </div>
+
+    <div class="main-grid">
+      <div class="card">
+        <h2 class="section-title">الإعدادات العامة</h2>
+
+        <label>تحميل ملف CSV</label>
+        <input type="file" id="csvFile" accept=".csv" />
+        <button class="btn-secondary" id="loadSampleCsv">تحميل نموذج CSV تجريبي</button>
+        <div id="fileStatus" class="note">قم بتحميل ملف CSV أولاً أو استخدم النموذج التجريبي.</div>
+
+        <label>العمود الهدف للتصنيف</label>
+        <select id="targetColumn">
+          <option value="">اختر العمود الهدف</option>
+        </select>
+
+        <label>أعمدة الخصائص العامة</label>
+        <div id="featureColumns" class="checkbox-grid"></div>
+
+        <div class="row">
+          <div>
+            <label>نسبة الاختبار: <span id="testRatioValue">20%</span></label>
+            <input type="range" id="testRatio" min="10" max="50" step="5" value="20" />
+          </div>
+          <div>
+            <label>عدد السجلات المعروضة</label>
+            <input type="number" id="previewLimit" min="5" max="30" value="8" />
+          </div>
+        </div>
+
+        <div class="three">
+          <div>
+            <label>K في KNN</label>
+            <input type="number" id="knnK" min="1" max="25" value="3" />
+          </div>
+          <div>
+            <label>عمق الشجرة DT</label>
+            <input type="number" id="treeDepth" min="1" max="8" value="4" />
+          </div>
+          <div>
+            <label>عدد عناقيد K-Means</label>
+            <input type="number" id="clusterK" min="2" max="10" value="3" />
+          </div>
+        </div>
+
+        <div class="three">
+          <div>
+            <label>الحد الأدنى للدعم Apriori</label>
+            <input type="number" id="minSupport" min="0.05" max="1" step="0.05" value="0.3" />
+          </div>
+          <div>
+            <label>الحد الأدنى للثقة</label>
+            <input type="number" id="minConfidence" min="0.05" max="1" step="0.05" value="0.6" />
+          </div>
+          <div>
+            <label>حد الارتباط Correlation</label>
+            <input type="number" id="corrThreshold" min="0.05" max="1" step="0.05" value="0.2" />
+          </div>
+        </div>
+
+        <h3>معالجة النصوص</h3>
+        <label>عمود النصوص</label>
+        <select id="textColumn">
+          <option value="">اختياري</option>
+        </select>
+
+        <label>قاموس Lexical للتصنيف النصي (كل سطر بصيغة: الفئة: كلمة1, كلمة2)</label>
+        <textarea id="lexiconInput" placeholder="positive: good, excellent, nice&#10;negative: bad, poor, weak"></textarea>
+
+        <label>الاحتفاظ بالنص ضمن الخصائص</label>
+        <select id="useTextVectors">
+          <option value="yes">نعم</option>
+          <option value="no">لا</option>
+        </select>
+
+        <button class="btn-primary" id="runClassification">تشغيل التصنيف</button>
+        <button class="btn-orange" id="runFeatureSelection">تشغيل Feature Selection</button>
+        <button class="btn-secondary" id="runClustering">تشغيل التجميع</button>
+        <button class="btn-purple" id="runApriori">تشغيل Role Mining / Apriori</button>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:20px;">
+          <h2 class="section-title">ملخص البيانات</h2>
+          <div class="stats" id="datasetStats"></div>
+          <div id="columnPills"></div>
+          <div class="preview" id="dataPreview">لا يوجد عرض للبيانات بعد.</div>
+        </div>
+
+        <div class="card">
+          <div class="top-tabs">
+            <button class="tab-btn active" data-main="classification">التصنيف</button>
+            <button class="tab-btn" data-main="clustering">التجميع</button>
+            <button class="tab-btn" data-main="roleMining">Role Mining</button>
+            <button class="tab-btn" data-main="featureSelection">Feature Selection</button>
+          </div>
+
+          <div id="classification" class="panel active">
+            <div class="inner-tabs">
+              <button class="tab-btn active" data-sub="knn">KNN</button>
+              <button class="tab-btn" data-sub="dt">DT</button>
+              <button class="tab-btn" data-sub="lr">LR</button>
+            </div>
+            <div id="classificationExtras" style="display:none;">
+              <div class="predict-block">
+                <h3>تنبؤ بفئة عنصر جديد</h3>
+                <p style="margin:0 0 12px; font-size:14px; color:#4b5563;">أدخل قيم الخصائص كما في ملف CSV ثم اضغط تنبؤ. تُحسب الفئة باستخدام النماذج المدرّبة على آخر تشغيل للتصنيف.</p>
+                <div id="predictInputs" class="predict-grid"></div>
+                <button type="button" class="btn-secondary" id="runSinglePredict" style="width:auto;">تنبؤ بالفئة</button>
+                <div id="predictResults" class="predict-results"></div>
+              </div>
+              <div class="code-export-block">
+                <h3>كود المصدر (تصدير تعليمي)</h3>
+                <p style="margin:0 0 10px; font-size:14px; color:#4b5563;">JavaScript جاهز للنسخ يتضمن بيانات التدريب والدوال اللازمة للتنبؤ خارج الصفحة.</p>
+                <div class="inner-tabs" id="codeExportTabs">
+                  <button type="button" class="tab-btn active" data-code="knn">KNN</button>
+                  <button type="button" class="tab-btn" data-code="dt">DT</button>
+                  <button type="button" class="tab-btn" data-code="lr">LR</button>
+                </div>
+                <textarea id="exportedSourceCode" class="source-export" readonly spellcheck="false" placeholder="شغّل التصنيف أولاً ليظهر الكود هنا."></textarea>
+                <button type="button" class="btn-purple" id="copySourceCode" style="width:auto; margin-top:8px;">نسخ الكود</button>
+              </div>
+            </div>
+            <div id="knn" class="subpanel active"></div>
+            <div id="dt" class="subpanel"></div>
+            <div id="lr" class="subpanel"></div>
+          </div>
+
+          <div id="clustering" class="panel">
+            <div class="inner-tabs">
+              <button class="tab-btn active" data-cluster="kmeans">K-Means</button>
+            </div>
+            <div id="kmeansPanel"></div>
+          </div>
+
+          <div id="roleMining" class="panel">
+            <div class="inner-tabs">
+              <button class="tab-btn active" data-role="apriori">Apriori</button>
+            </div>
+            <div id="aprioriPanel"></div>
+          </div>
+
+          <div id="featureSelection" class="panel">
+            <div class="inner-tabs">
+              <button class="tab-btn active" data-feature="corr">Correlation</button>
+            </div>
+            <div id="corrPanel"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">نسخة تعليمية بملف واحد HTML CSS JS</div>
+  </div>
+
+  <script>
+    const state = {
+      rows: [],
+      columns: [],
+      target: '',
+      features: [],
+    };
+
+    /** آخر نتيجة تصنيف: للتنبؤ بصف جديد وتصدير الكود */
+    let lastClf = null;
+
+    const fileInput = document.getElementById('csvFile');
+    const targetColumn = document.getElementById('targetColumn');
+    const textColumn = document.getElementById('textColumn');
+    const featureColumns = document.getElementById('featureColumns');
+    const fileStatus = document.getElementById('fileStatus');
+    const dataPreview = document.getElementById('dataPreview');
+    const datasetStats = document.getElementById('datasetStats');
+    const columnPills = document.getElementById('columnPills');
+    const testRatio = document.getElementById('testRatio');
+    const testRatioValue = document.getElementById('testRatioValue');
+
+    testRatio.addEventListener('input', () => testRatioValue.textContent = testRatio.value + '%');
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (result) => loadRows(result.data),
+        error: () => setStatus('حدث خطأ أثناء قراءة الملف.', false)
+      });
+    });
+
+    document.getElementById('loadSampleCsv').addEventListener('click', () => {
+      const sample = `age,income,study_hours,attendance,department,text_sentiment,label,items\n23,300,5,90,IT,good excellent practical,Pass,read|lab|project\n21,250,4,85,IT,good nice active,Pass,read|quiz|project\n20,150,2,60,Business,bad weak absent,Fail,absence|warning\n22,200,3,70,Business,average normal fair,Fail,quiz|warning\n24,500,6,95,Engineering,excellent smart strong,Pass,lab|design|project\n19,120,1,50,IT,bad poor weak,Fail,absence|warning|quiz\n23,450,5,88,Engineering,good excellent design,Pass,lab|design\n22,170,2,65,Business,poor fair weak,Fail,warning|quiz\n25,520,6,97,Engineering,excellent powerful success,Pass,lab|design|project\n20,140,2,55,IT,bad weak poor,Fail,absence|warning`;
+      const parsed = Papa.parse(sample, { header: true, skipEmptyLines: true });
+      loadRows(parsed.data);
+      setStatus('تم تحميل نموذج CSV التجريبي بنجاح.', true);
+      document.getElementById('lexiconInput').value = 'Pass: good, excellent, smart, strong, success\nFail: bad, poor, weak, absence, warning';
+    });
+
+    function loadRows(rawRows) {
+      const rows = rawRows.filter(row => Object.values(row).some(v => String(v ?? '').trim() !== ''));
+      if (!rows.length) return setStatus('الملف لا يحتوي على بيانات صالحة.', false);
+      state.rows = rows;
+      state.columns = Object.keys(rows[0]);
+      renderColumns();
+      renderPreview();
+      renderStats();
+      setStatus(`تم تحميل البيانات بنجاح. عدد الصفوف: ${rows.length}`, true);
+    }
+
+    function setStatus(msg, ok) {
+      fileStatus.className = ok ? 'note ok' : 'note';
+      fileStatus.textContent = msg;
+    }
+
+    function renderColumns() {
+      targetColumn.innerHTML = '<option value="">اختر العمود الهدف</option>';
+      textColumn.innerHTML = '<option value="">اختياري</option>';
+      featureColumns.innerHTML = '';
+      columnPills.innerHTML = '';
+      state.columns.forEach(col => {
+        const o1 = document.createElement('option'); o1.value = col; o1.textContent = col; targetColumn.appendChild(o1);
+        const o2 = document.createElement('option'); o2.value = col; o2.textContent = col; textColumn.appendChild(o2);
+        const item = document.createElement('label');
+        item.className = 'checkbox-item';
+        item.innerHTML = `<input type="checkbox" value="${escapeHtml(col)}" checked> <span>${escapeHtml(col)}</span>`;
+        featureColumns.appendChild(item);
+        const pill = document.createElement('span'); pill.className = 'pill'; pill.textContent = col; columnPills.appendChild(pill);
+      });
+    }
+
+    targetColumn.addEventListener('change', syncFeatureSelection);
+    textColumn.addEventListener('change', syncFeatureSelection);
+
+    function syncFeatureSelection() {
+      const target = targetColumn.value;
+      const textCol = textColumn.value;
+      featureColumns.querySelectorAll('input[type="checkbox"]').forEach(ch => {
+        if (ch.value === target) {
+          ch.checked = false;
+          ch.disabled = true;
+        } else {
+          ch.disabled = false;
+          if (ch.value === textCol && document.getElementById('useTextVectors').value === 'yes') ch.checked = true;
+        }
+      });
+    }
+
+    function getSelectedFeatures() {
+      return [...featureColumns.querySelectorAll('input[type="checkbox"]:checked')].map(el => el.value);
+    }
+
+    function renderPreview() {
+      const limit = Number(document.getElementById('previewLimit').value || 8);
+      const previewRows = state.rows.slice(0, limit);
+      let html = '<table><thead><tr>';
+      state.columns.forEach(c => html += `<th>${escapeHtml(c)}</th>`);
+      html += '</tr></thead><tbody>';
+      previewRows.forEach(row => {
+        html += '<tr>';
+        state.columns.forEach(c => html += `<td>${escapeHtml(row[c] ?? '')}</td>`);
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      dataPreview.innerHTML = html;
+    }
+
+    document.getElementById('previewLimit').addEventListener('input', renderPreview);
+
+    function renderStats() {
+      datasetStats.innerHTML = `
+        <div class="stat-box"><div class="label">عدد الصفوف</div><div class="value">${state.rows.length}</div></div>
+        <div class="stat-box"><div class="label">عدد الأعمدة</div><div class="value">${state.columns.length}</div></div>
+        <div class="stat-box"><div class="label">نوع الملف</div><div class="value">CSV</div></div>
+      `;
+    }
+
+    function isNumeric(value) {
+      if (value === null || value === undefined || value === '') return false;
+      return !isNaN(Number(value));
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function seededShuffle(arr, seed = 42) {
+      const a = [...arr];
+      let s = seed;
+      function rand() { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296; }
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function mode(arr) {
+      const counts = {};
+      let best = null, max = -1;
+      arr.forEach(v => {
+        counts[v] = (counts[v] || 0) + 1;
+        if (counts[v] > max) { max = counts[v]; best = v; }
+      });
+      return best;
+    }
+
+    function euclidean(a, b) {
+      let sum = 0;
+      for (let i = 0; i < a.length; i++) { const d = a[i] - b[i]; sum += d * d; }
+      return Math.sqrt(sum);
+    }
+
+    function splitDataset(X, y, ratio) {
+      const idx = seededShuffle([...Array(X.length).keys()]);
+      const testSize = Math.max(1, Math.floor(X.length * ratio));
+      const testIdx = idx.slice(0, testSize);
+      const trainIdx = idx.slice(testSize);
+      return {
+        XTrain: trainIdx.map(i => X[i]),
+        yTrain: trainIdx.map(i => y[i]),
+        XTest: testIdx.map(i => X[i]),
+        yTest: testIdx.map(i => y[i])
+      };
+    }
+
+    function parseLexicon(text) {
+      const lines = text.split('\n').map(s => s.trim()).filter(Boolean);
+      const lex = {};
+      lines.forEach(line => {
+        const parts = line.split(':');
+        if (parts.length < 2) return;
+        const label = parts[0].trim();
+        const words = parts.slice(1).join(':').split(',').map(w => w.trim().toLowerCase()).filter(Boolean);
+        lex[label] = words;
+      });
+      return lex;
+    }
+
+    function tokenize(text) {
+      return String(text || '')
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+        .split(/\s+/)
+        .filter(Boolean);
+    }
+
+    function buildVocabulary(rows, textCol, maxWords = 20) {
+      if (!textCol) return [];
+      const counts = {};
+      rows.forEach(r => tokenize(r[textCol]).forEach(tok => counts[tok] = (counts[tok] || 0) + 1));
+      return Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, maxWords).map(x => x[0]);
+    }
+
+    function textToVector(text, vocabulary, lexicon) {
+      const tokens = tokenize(text);
+      const counts = {};
+      tokens.forEach(t => counts[t] = (counts[t] || 0) + 1);
+      const vec = vocabulary.map(w => counts[w] || 0);
+      const lexScores = Object.keys(lexicon).map(label => {
+        let s = 0;
+        lexicon[label].forEach(word => { if (counts[word]) s += counts[word]; });
+        return s;
+      });
+      return [...vec, ...lexScores];
+    }
+
+    function encodeDataset(rows, featureCols, targetCol, textCol, useText, lexicon) {
+      const meta = {};
+      const normalFeatures = featureCols.filter(c => c !== textCol);
+      const allCols = [...normalFeatures, targetCol].filter(Boolean);
+      allCols.forEach(col => {
+        const vals = rows.map(r => r[col]).filter(v => v !== '' && v !== null && v !== undefined);
+        const numeric = vals.length > 0 && vals.every(isNumeric);
+        if (numeric) {
+          const nums = vals.map(Number);
+          const mean = nums.reduce((a,b)=>a+b,0) / nums.length;
+          const variance = nums.reduce((a,b)=>a + (b-mean)**2, 0) / nums.length;
+          const std = Math.sqrt(variance) || 1;
+          meta[col] = { type: 'numeric', mean, std };
+        } else {
+          const unique = [...new Set(vals.map(String))];
+          const map = {};
+          unique.forEach((v,i)=> map[v] = i);
+          meta[col] = { type: 'categorical', map, reverse: unique };
+        }
+      });
+
+      const vocabulary = useText && textCol ? buildVocabulary(rows, textCol, 15) : [];
+      const lexLabels = Object.keys(lexicon);
+
+      const X = rows.map(row => {
+        const base = normalFeatures.map(col => {
+          const info = meta[col];
+          const raw = row[col];
+          if (!info) return 0;
+          if (info.type === 'numeric') {
+            const v = isNumeric(raw) ? Number(raw) : info.mean;
+            return (v - info.mean) / info.std;
+          }
+          const key = String(raw ?? '');
+          return key in info.map ? info.map[key] : 0;
+        });
+        const textVec = useText && textCol ? textToVector(row[textCol], vocabulary, lexicon) : [];
+        return [...base, ...textVec];
+      });
+
+      const y = targetCol ? rows.map(row => String(row[targetCol])) : [];
+      const featureNames = [...normalFeatures, ...vocabulary.map(w => `tok:${w}`), ...lexLabels.map(l => `lex:${l}`)];
+      return { X, y, meta, vocabulary, featureNames };
+    }
+
+    function vectorFromRow(row, featureCols, textCol, useText, lexicon, meta, vocabulary) {
+      const normalFeatures = featureCols.filter(c => c !== textCol);
+      const base = normalFeatures.map(col => {
+        const info = meta[col];
+        const raw = row[col];
+        if (!info) return 0;
+        if (info.type === 'numeric') {
+          const v = isNumeric(raw) ? Number(raw) : info.mean;
+          return (v - info.mean) / info.std;
+        }
+        const key = String(raw ?? '');
+        return key in info.map ? info.map[key] : 0;
+      });
+      const textVec = useText && textCol ? textToVector(row[textCol], vocabulary, lexicon) : [];
+      return [...base, ...textVec];
+    }
+
+    function knnPredictOne(vec, XTrain, yTrain, k) {
+      const distances = XTrain.map((trainRow, i) => ({ label: yTrain[i], dist: euclidean(trainRow, vec) }));
+      distances.sort((a, b) => a.dist - b.dist);
+      return mode(distances.slice(0, k).map(d => d.label));
+    }
+
+    function predictOvrSingle(model, row) {
+      let bestClass = null, bestProb = -Infinity;
+      model.classes.forEach(cls => {
+        const p = predictBinaryLR(model.models[cls], row);
+        if (p > bestProb) { bestProb = p; bestClass = cls; }
+      });
+      return bestClass;
+    }
+
+    function buildPredictFormFields() {
+      if (!lastClf) return;
+      const { features, textCol, useText, meta } = lastClf;
+      const box = document.getElementById('predictInputs');
+      box.innerHTML = '';
+      features.forEach(col => {
+        if (col === textCol && useText) {
+          const wrap = document.createElement('div');
+          wrap.style.gridColumn = '1 / -1';
+          wrap.innerHTML = `<label>${escapeHtml(col)} (نص)</label><textarea data-predict-col="${escapeHtml(col)}" rows="2" placeholder="نص العينة"></textarea>`;
+          box.appendChild(wrap);
+          return;
+        }
+        const wrap = document.createElement('div');
+        const info = meta[col];
+        if (info && info.type === 'categorical') {
+          const opts = info.reverse.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+          wrap.innerHTML = `<label>${escapeHtml(col)}</label><select data-predict-col="${escapeHtml(col)}">${opts}</select>`;
+        } else {
+          wrap.innerHTML = `<label>${escapeHtml(col)}</label><input type="text" data-predict-col="${escapeHtml(col)}" placeholder="رقم أو نص" />`;
+        }
+        box.appendChild(wrap);
+      });
+    }
+
+    function readPredictRowFromForm() {
+      if (!lastClf) return null;
+      const row = {};
+      document.querySelectorAll('#predictInputs [data-predict-col]').forEach(el => {
+        const col = el.getAttribute('data-predict-col');
+        if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') row[col] = el.value;
+        else if (el.tagName === 'SELECT') row[col] = el.value;
+      });
+      return row;
+    }
+
+    function runSingleRowPredict() {
+      if (!lastClf) return alert('شغّل التصنيف أولاً');
+      const row = readPredictRowFromForm();
+      if (!row || !Object.keys(row).length) return alert('أدخل قيم الخصائص');
+      const vec = vectorFromRow(row, lastClf.features, lastClf.textCol, lastClf.useText, lastClf.lexicon, lastClf.meta, lastClf.vocabulary);
+      const knnCls = knnPredictOne(vec, lastClf.XTrain, lastClf.yTrain, lastClf.k);
+      const dtCls = predictTree(lastClf.tree, vec);
+      const lrCls = predictOvrSingle(lastClf.lrModel, vec);
+      const out = document.getElementById('predictResults');
+      out.innerHTML = `
+        <div class="pred-pill"><div class="alg">KNN</div><div class="cls">${escapeHtml(String(knnCls))}</div></div>
+        <div class="pred-pill"><div class="alg">Decision Tree</div><div class="cls">${escapeHtml(String(dtCls))}</div></div>
+        <div class="pred-pill"><div class="alg">Logistic Regression</div><div class="cls">${escapeHtml(String(lrCls))}</div></div>
+      `;
+    }
+
+    function generateKnnExportCode() {
+      const L = lastClf;
+      return `// Exported KNN classifier (educational)
+const META = ${JSON.stringify(L.meta, null, 2)};
+const VOCABULARY = ${JSON.stringify(L.vocabulary)};
+const LEXICON = ${JSON.stringify(L.lexicon)};
+const FEATURE_COLS = ${JSON.stringify(L.features)};
+const TEXT_COL = ${JSON.stringify(L.textCol)};
+const USE_TEXT = ${JSON.stringify(L.useText)};
+const K = ${L.k};
+const X_TRAIN = ${JSON.stringify(L.XTrain)};
+const Y_TRAIN = ${JSON.stringify(L.yTrain)};
+
+function tokenize(text) {
+  return String(text || '').toLowerCase().replace(/[^\\p{L}\\p{N}\\s]/gu, ' ').split(/\\s+/).filter(Boolean);
+}
+function textToVector(text, vocabulary, lexicon) {
+  const tokens = tokenize(text);
+  const counts = {};
+  tokens.forEach(t => { counts[t] = (counts[t] || 0) + 1; });
+  const vec = vocabulary.map(w => counts[w] || 0);
+  const lexScores = Object.keys(lexicon).map(label => {
+    let s = 0;
+    lexicon[label].forEach(word => { if (counts[word]) s += counts[word]; });
+    return s;
+  });
+  return [...vec, ...lexScores];
+}
+function isNumeric(value) {
+  if (value === null || value === undefined || value === '') return false;
+  return !isNaN(Number(value));
+}
+function vectorFromRow(row) {
+  const normalFeatures = FEATURE_COLS.filter(c => c !== TEXT_COL);
+  const base = normalFeatures.map(col => {
+    const info = META[col];
+    const raw = row[col];
+    if (!info) return 0;
+    if (info.type === 'numeric') {
+      const v = isNumeric(raw) ? Number(raw) : info.mean;
+      return (v - info.mean) / info.std;
+    }
+    const key = String(raw ?? '');
+    return key in info.map ? info.map[key] : 0;
+  });
+  const textVec = USE_TEXT && TEXT_COL ? textToVector(row[TEXT_COL], VOCABULARY, LEXICON) : [];
+  return [...base, ...textVec];
+}
+function euclidean(a, b) {
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) { const d = a[i] - b[i]; sum += d * d; }
+  return Math.sqrt(sum);
+}
+function mode(arr) {
+  const counts = {};
+  let best = null, max = -1;
+  arr.forEach(v => {
+    counts[v] = (counts[v] || 0) + 1;
+    if (counts[v] > max) { max = counts[v]; best = v; }
+  });
+  return best;
+}
+function predictKnn(row) {
+  const vec = vectorFromRow(row);
+  const distances = X_TRAIN.map((trainRow, i) => ({ label: Y_TRAIN[i], dist: euclidean(trainRow, vec) }));
+  distances.sort((a, b) => a.dist - b.dist);
+  return mode(distances.slice(0, K).map(d => d.label));
+}
+// مثال: predictKnn(صف كائن بأسماء الأعمدة كما في FEATURE_COLS)
+`;
+    }
+
+    function generateDtExportCode() {
+      const L = lastClf;
+      return `// Exported Decision Tree (educational)
+const META = ${JSON.stringify(L.meta, null, 2)};
+const VOCABULARY = ${JSON.stringify(L.vocabulary)};
+const LEXICON = ${JSON.stringify(L.lexicon)};
+const FEATURE_COLS = ${JSON.stringify(L.features)};
+const TEXT_COL = ${JSON.stringify(L.textCol)};
+const USE_TEXT = ${JSON.stringify(L.useText)};
+const TREE = ${JSON.stringify(L.tree)};
+
+function tokenize(text) {
+  return String(text || '').toLowerCase().replace(/[^\\p{L}\\p{N}\\s]/gu, ' ').split(/\\s+/).filter(Boolean);
+}
+function textToVector(text, vocabulary, lexicon) {
+  const tokens = tokenize(text);
+  const counts = {};
+  tokens.forEach(t => { counts[t] = (counts[t] || 0) + 1; });
+  const vec = vocabulary.map(w => counts[w] || 0);
+  const lexScores = Object.keys(lexicon).map(label => {
+    let s = 0;
+    lexicon[label].forEach(word => { if (counts[word]) s += counts[word]; });
+    return s;
+  });
+  return [...vec, ...lexScores];
+}
+function isNumeric(value) {
+  if (value === null || value === undefined || value === '') return false;
+  return !isNaN(Number(value));
+}
+function vectorFromRow(row) {
+  const normalFeatures = FEATURE_COLS.filter(c => c !== TEXT_COL);
+  const base = normalFeatures.map(col => {
+    const info = META[col];
+    const raw = row[col];
+    if (!info) return 0;
+    if (info.type === 'numeric') {
+      const v = isNumeric(raw) ? Number(raw) : info.mean;
+      return (v - info.mean) / info.std;
+    }
+    const key = String(raw ?? '');
+    return key in info.map ? info.map[key] : 0;
+  });
+  const textVec = USE_TEXT && TEXT_COL ? textToVector(row[TEXT_COL], VOCABULARY, LEXICON) : [];
+  return [...base, ...textVec];
+}
+function predictTree(tree, row) {
+  if (tree.type === 'leaf') return tree.value;
+  return row[tree.feature] <= tree.threshold ? predictTree(tree.left, row) : predictTree(tree.right, row);
+}
+function predictDt(row) {
+  return predictTree(TREE, vectorFromRow(row));
+}
+`;
+    }
+
+    function generateLrExportCode() {
+      const L = lastClf;
+      return `// Exported One-vs-Rest Logistic Regression (educational)
+const META = ${JSON.stringify(L.meta, null, 2)};
+const VOCABULARY = ${JSON.stringify(L.vocabulary)};
+const LEXICON = ${JSON.stringify(L.lexicon)};
+const FEATURE_COLS = ${JSON.stringify(L.features)};
+const TEXT_COL = ${JSON.stringify(L.textCol)};
+const USE_TEXT = ${JSON.stringify(L.useText)};
+const LR_MODEL = ${JSON.stringify(L.lrModel)};
+
+function tokenize(text) {
+  return String(text || '').toLowerCase().replace(/[^\\p{L}\\p{N}\\s]/gu, ' ').split(/\\s+/).filter(Boolean);
+}
+function textToVector(text, vocabulary, lexicon) {
+  const tokens = tokenize(text);
+  const counts = {};
+  tokens.forEach(t => { counts[t] = (counts[t] || 0) + 1; });
+  const vec = vocabulary.map(w => counts[w] || 0);
+  const lexScores = Object.keys(lexicon).map(label => {
+    let s = 0;
+    lexicon[label].forEach(word => { if (counts[word]) s += counts[word]; });
+    return s;
+  });
+  return [...vec, ...lexScores];
+}
+function isNumeric(value) {
+  if (value === null || value === undefined || value === '') return false;
+  return !isNaN(Number(value));
+}
+function vectorFromRow(row) {
+  const normalFeatures = FEATURE_COLS.filter(c => c !== TEXT_COL);
+  const base = normalFeatures.map(col => {
+    const info = META[col];
+    const raw = row[col];
+    if (!info) return 0;
+    if (info.type === 'numeric') {
+      const v = isNumeric(raw) ? Number(raw) : info.mean;
+      return (v - info.mean) / info.std;
+    }
+    const key = String(raw ?? '');
+    return key in info.map ? info.map[key] : 0;
+  });
+  const textVec = USE_TEXT && TEXT_COL ? textToVector(row[TEXT_COL], VOCABULARY, LEXICON) : [];
+  return [...base, ...textVec];
+}
+function sigmoid(z) { return 1 / (1 + Math.exp(-z)); }
+function predictBinaryLR(model, row) {
+  let z = model.bias;
+  for (let i = 0; i < row.length; i++) z += model.weights[i] * row[i];
+  return sigmoid(z);
+}
+function predictLr(row) {
+  const vec = vectorFromRow(row);
+  let bestClass = null, bestProb = -Infinity;
+  LR_MODEL.classes.forEach(cls => {
+    const p = predictBinaryLR(LR_MODEL.models[cls], vec);
+    if (p > bestProb) { bestProb = p; bestClass = cls; }
+  });
+  return bestClass;
+}
+`;
+    }
+
+    let activeCodeExport = 'knn';
+    function refreshExportedCode() {
+      const ta = document.getElementById('exportedSourceCode');
+      if (!lastClf) { ta.value = ''; return; }
+      if (activeCodeExport === 'knn') ta.value = generateKnnExportCode();
+      else if (activeCodeExport === 'dt') ta.value = generateDtExportCode();
+      else ta.value = generateLrExportCode();
+    }
+
+    function accuracyScore(yTrue, yPred) {
+      let correct = 0;
+      for (let i = 0; i < yTrue.length; i++) if (yTrue[i] === yPred[i]) correct++;
+      return yTrue.length ? correct / yTrue.length : 0;
+    }
+
+    function buildConfusionMatrix(yTrue, yPred) {
+      const labels = [...new Set([...yTrue, ...yPred])];
+      const matrix = {};
+      labels.forEach(a => { matrix[a] = {}; labels.forEach(b => matrix[a][b] = 0); });
+      for (let i = 0; i < yTrue.length; i++) matrix[yTrue[i]][yPred[i]]++;
+      return { labels, matrix };
+    }
+
+    function precisionRecallF1(yTrue, yPred) {
+      const labels = [...new Set([...yTrue, ...yPred])];
+      const rows = labels.map(label => {
+        let tp = 0, fp = 0, fn = 0;
+        for (let i = 0; i < yTrue.length; i++) {
+          if (yTrue[i] === label && yPred[i] === label) tp++;
+          if (yTrue[i] !== label && yPred[i] === label) fp++;
+          if (yTrue[i] === label && yPred[i] !== label) fn++;
+        }
+        const precision = tp + fp ? tp / (tp + fp) : 0;
+        const recall = tp + fn ? tp / (tp + fn) : 0;
+        const f1 = precision + recall ? 2 * precision * recall / (precision + recall) : 0;
+        return { label, precision, recall, f1 };
+      });
+      const avg = rows.reduce((acc, r) => {
+        acc.precision += r.precision; acc.recall += r.recall; acc.f1 += r.f1; return acc;
+      }, { precision: 0, recall: 0, f1: 0 });
+      const n = rows.length || 1;
+      return { rows, avg: { precision: avg.precision / n, recall: avg.recall / n, f1: avg.f1 / n } };
+    }
+
+    function knnPredict(XTrain, yTrain, XTest, k) {
+      return XTest.map(testRow => {
+        const distances = XTrain.map((trainRow, i) => ({ label: yTrain[i], dist: euclidean(trainRow, testRow) }));
+        distances.sort((a,b) => a.dist - b.dist);
+        return mode(distances.slice(0, k).map(d => d.label));
+      });
+    }
+
+    function giniImpurity(labels) {
+      if (!labels.length) return 0;
+      const counts = {};
+      labels.forEach(l => counts[l] = (counts[l] || 0) + 1);
+      let impurity = 1;
+      Object.values(counts).forEach(c => { const p = c / labels.length; impurity -= p * p; });
+      return impurity;
+    }
+
+    function bestSplit(X, y) {
+      let best = null;
+      const base = giniImpurity(y);
+      const featureCount = X[0]?.length || 0;
+      for (let f = 0; f < featureCount; f++) {
+        const values = [...new Set(X.map(row => row[f]))].sort((a,b) => a - b);
+        values.forEach(threshold => {
+          const leftY = [], rightY = [];
+          for (let r = 0; r < X.length; r++) {
+            if (X[r][f] <= threshold) leftY.push(y[r]); else rightY.push(y[r]);
+          }
+          if (!leftY.length || !rightY.length) return;
+          const weighted = (leftY.length / y.length) * giniImpurity(leftY) + (rightY.length / y.length) * giniImpurity(rightY);
+          const gain = base - weighted;
+          if (!best || gain > best.gain) best = { feature: f, threshold, gain };
+        });
+      }
+      return best;
+    }
+
+    function buildTree(X, y, depth, maxDepth) {
+      const unique = [...new Set(y)];
+      if (unique.length === 1) return { type: 'leaf', value: unique[0] };
+      if (depth >= maxDepth || X.length < 2) return { type: 'leaf', value: mode(y) };
+      const split = bestSplit(X, y);
+      if (!split || split.gain <= 0) return { type: 'leaf', value: mode(y) };
+      const leftX = [], leftY = [], rightX = [], rightY = [];
+      for (let i = 0; i < X.length; i++) {
+        if (X[i][split.feature] <= split.threshold) { leftX.push(X[i]); leftY.push(y[i]); }
+        else { rightX.push(X[i]); rightY.push(y[i]); }
+      }
+      return {
+        type: 'node', feature: split.feature, threshold: split.threshold,
+        left: buildTree(leftX, leftY, depth + 1, maxDepth),
+        right: buildTree(rightX, rightY, depth + 1, maxDepth)
+      };
+    }
+
+    function predictTree(tree, row) {
+      if (tree.type === 'leaf') return tree.value;
+      return row[tree.feature] <= tree.threshold ? predictTree(tree.left, row) : predictTree(tree.right, row);
+    }
+
+    function sigmoid(z) { return 1 / (1 + Math.exp(-z)); }
+
+    function trainBinaryLR(X, y01, epochs = 300, lr = 0.1) {
+      const features = X[0].length;
+      const weights = Array(features).fill(0);
+      let bias = 0;
+      for (let ep = 0; ep < epochs; ep++) {
+        for (let i = 0; i < X.length; i++) {
+          let z = bias;
+          for (let j = 0; j < features; j++) z += weights[j] * X[i][j];
+          const pred = sigmoid(z);
+          const error = pred - y01[i];
+          for (let j = 0; j < features; j++) weights[j] -= lr * error * X[i][j];
+          bias -= lr * error;
+        }
+      }
+      return { weights, bias };
+    }
+
+    function predictBinaryLR(model, row) {
+      let z = model.bias;
+      for (let i = 0; i < row.length; i++) z += model.weights[i] * row[i];
+      return sigmoid(z);
+    }
+
+    function trainOVRLogisticRegression(XTrain, yTrain) {
+      const classes = [...new Set(yTrain)];
+      const models = {};
+      classes.forEach(cls => {
+        const y01 = yTrain.map(y => y === cls ? 1 : 0);
+        models[cls] = trainBinaryLR(XTrain, y01);
+      });
+      return { classes, models };
+    }
+
+    function predictOVR(model, XTest) {
+      return XTest.map(row => {
+        let bestClass = null, bestProb = -Infinity;
+        model.classes.forEach(cls => {
+          const p = predictBinaryLR(model.models[cls], row);
+          if (p > bestProb) { bestProb = p; bestClass = cls; }
+        });
+        return bestClass;
+      });
+    }
+
+    function meanPoint(points) {
+      if (!points.length) return [];
+      const dims = points[0].length;
+      const sums = Array(dims).fill(0);
+      points.forEach(p => { for (let i = 0; i < dims; i++) sums[i] += p[i]; });
+      return sums.map(v => v / points.length);
+    }
+
+    function kmeans(X, k, iterations = 20) {
+      let centroids = seededShuffle(X).slice(0, k).map(r => [...r]);
+      let assignments = Array(X.length).fill(0);
+      for (let it = 0; it < iterations; it++) {
+        assignments = X.map(row => {
+          let bestIdx = 0, bestDist = Infinity;
+          centroids.forEach((c, i) => {
+            const d = euclidean(row, c);
+            if (d < bestDist) { bestDist = d; bestIdx = i; }
+          });
+          return bestIdx;
+        });
+        centroids = centroids.map((_, idx) => {
+          const clusterPoints = X.filter((__, i) => assignments[i] === idx);
+          return clusterPoints.length ? meanPoint(clusterPoints) : centroids[idx];
+        });
+      }
+      return { centroids, assignments };
+    }
+
+    function pearsonCorrelation(a, b) {
+      const n = Math.min(a.length, b.length);
+      if (!n) return 0;
+      const meanA = a.reduce((x,y)=>x+y,0)/n;
+      const meanB = b.reduce((x,y)=>x+y,0)/n;
+      let num = 0, denA = 0, denB = 0;
+      for (let i = 0; i < n; i++) {
+        const da = a[i] - meanA, db = b[i] - meanB;
+        num += da * db; denA += da * da; denB += db * db;
+      }
+      return denA && denB ? num / Math.sqrt(denA * denB) : 0;
+    }
+
+    function featureSelectionByCorrelation(rows, features, targetCol, textCol, useText, lexicon) {
+      const { X, y, featureNames } = encodeDataset(rows, features, targetCol, textCol, useText, lexicon);
+      const targetMap = {};
+      [...new Set(y)].forEach((v,i) => targetMap[v] = i);
+      const yNum = y.map(v => targetMap[v]);
+      const results = featureNames.map((name, idx) => {
+        const column = X.map(r => r[idx] || 0);
+        return { feature: name, corr: pearsonCorrelation(column, yNum) };
+      }).sort((a,b) => Math.abs(b.corr) - Math.abs(a.corr));
+      return results;
+    }
+
+    function getTransactions(columnName) {
+      return state.rows.map(row => String(row[columnName] || '').split('|').map(x => x.trim()).filter(Boolean));
+    }
+
+    function supportOf(itemset, transactions) {
+      let count = 0;
+      transactions.forEach(t => {
+        if (itemset.every(item => t.includes(item))) count++;
+      });
+      return count / transactions.length;
+    }
+
+    function uniqueItems(transactions) {
+      const s = new Set();
+      transactions.forEach(t => t.forEach(i => s.add(i)));
+      return [...s];
+    }
+
+    function combinations(arr, size) {
+      const result = [];
+      function helper(start, combo) {
+        if (combo.length === size) return result.push([...combo]);
+        for (let i = start; i < arr.length; i++) {
+          combo.push(arr[i]); helper(i + 1, combo); combo.pop();
+        }
+      }
+      helper(0, []);
+      return result;
+    }
+
+    function apriori(transactions, minSupport, minConfidence) {
+      const items = uniqueItems(transactions);
+      const frequent = [];
+      const L1 = items.map(i => [i]).map(set => ({ items: set, support: supportOf(set, transactions) })).filter(x => x.support >= minSupport);
+      frequent.push(...L1);
+      const L2 = combinations(L1.map(x => x.items[0]), 2).map(set => ({ items: set, support: supportOf(set, transactions) })).filter(x => x.support >= minSupport);
+      frequent.push(...L2);
+      const rules = [];
+      L2.forEach(itemset => {
+        itemset.items.forEach(item => {
+          const antecedent = [item];
+          const consequent = itemset.items.filter(x => x !== item);
+          const conf = itemset.support / supportOf(antecedent, transactions);
+          if (conf >= minConfidence) rules.push({ antecedent, consequent, support: itemset.support, confidence: conf });
+        });
+      });
+      return { frequent, rules };
+    }
+
+    function predictionTable(yTrue, yPred, limit = 12) {
+      let html = '<div class="table-wrap"><table><thead><tr><th>#</th><th>الحقيقي</th><th>المتوقع</th></tr></thead><tbody>';
+      for (let i = 0; i < Math.min(limit, yTrue.length); i++) html += `<tr><td>${i+1}</td><td>${escapeHtml(yTrue[i])}</td><td>${escapeHtml(yPred[i])}</td></tr>`;
+      html += '</tbody></table></div>';
+      return html;
+    }
+
+    function confusionMatrixTable(cm) {
+      let html = '<div class="table-wrap"><table><thead><tr><th>Actual \\ Predicted</th>';
+      cm.labels.forEach(l => html += `<th>${escapeHtml(l)}</th>`);
+      html += '</tr></thead><tbody>';
+      cm.labels.forEach(a => {
+        html += `<tr><th>${escapeHtml(a)}</th>`;
+        cm.labels.forEach(b => html += `<td>${cm.matrix[a][b]}</td>`);
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+      return html;
+    }
+
+    function prfTable(m) {
+      let html = '<div class="table-wrap"><table><thead><tr><th>الفئة</th><th>Precision</th><th>Recall</th><th>F1</th></tr></thead><tbody>';
+      m.rows.forEach(r => html += `<tr><td>${escapeHtml(r.label)}</td><td>${(r.precision*100).toFixed(2)}%</td><td>${(r.recall*100).toFixed(2)}%</td><td>${(r.f1*100).toFixed(2)}%</td></tr>`);
+      html += `<tr><th>المتوسط</th><th>${(m.avg.precision*100).toFixed(2)}%</th><th>${(m.avg.recall*100).toFixed(2)}%</th><th>${(m.avg.f1*100).toFixed(2)}%</th></tr>`;
+      html += '</tbody></table></div>';
+      return html;
+    }
+
+    function barChart(canvasId, data, labels, title) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      canvas.width = 800; canvas.height = 320;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      const padding = 50;
+      const max = Math.max(...data, 1);
+      const width = (canvas.width - padding*2) / data.length;
+      ctx.font = '14px Tahoma';
+      ctx.fillStyle = '#111827';
+      ctx.fillText(title, padding, 25);
+      data.forEach((v, i) => {
+        const h = ((canvas.height - 100) * v) / max;
+        const x = padding + i * width + 12;
+        const y = canvas.height - padding - h;
+        ctx.fillStyle = ['#2563eb','#0f766e','#ea580c','#7c3aed','#dc2626','#0891b2'][i % 6];
+        ctx.fillRect(x, y, width - 24, h);
+        ctx.fillStyle = '#111827';
+        ctx.fillText(labels[i], x, canvas.height - 20);
+        ctx.fillText(v.toFixed ? v.toFixed(2) : v, x, y - 8);
+      });
+    }
+
+    function renderClassifierResult(targetId, title, yTrue, yPred, extra = '') {
+      const acc = accuracyScore(yTrue, yPred);
+      const err = 1 - acc;
+      const cm = buildConfusionMatrix(yTrue, yPred);
+      const prf = precisionRecallF1(yTrue, yPred);
+      const canvasId = targetId + '_chart';
+      document.getElementById(targetId).innerHTML = `
+        <div class="stats">
+          <div class="stat-box"><div class="label">الخوارزمية</div><div class="value" style="font-size:18px;">${title}</div></div>
+          <div class="stat-box"><div class="label">Accuracy</div><div class="value">${(acc*100).toFixed(2)}%</div></div>
+          <div class="stat-box"><div class="label">Error Rate</div><div class="value">${(err*100).toFixed(2)}%</div></div>
+          <div class="stat-box"><div class="label">عدد عينات الاختبار</div><div class="value">${yTrue.length}</div></div>
+        </div>
+        ${extra}
+        <h3>Confusion Matrix</h3>
+        ${confusionMatrixTable(cm)}
+        <h3>Precision / Recall / F1</h3>
+        ${prfTable(prf)}
+        <h3>عينات من التنبؤات</h3>
+        ${predictionTable(yTrue, yPred)}
+        <h3>رسم بياني للنتائج</h3>
+        <canvas id="${canvasId}"></canvas>
+      `;
+      setTimeout(() => barChart(canvasId, [acc*100, err*100, prf.avg.precision*100, prf.avg.recall*100, prf.avg.f1*100], ['Acc','Err','Prec','Rec','F1'], title), 0);
+    }
+
+    function renderKmeansResult(assignments, centroids) {
+      const counts = {};
+      assignments.forEach(a => counts[a] = (counts[a] || 0) + 1);
+      const keys = Object.keys(counts).sort((a,b) => a-b);
+      let rows = keys.map(k => `<tr><td>${Number(k)+1}</td><td>${counts[k]}</td></tr>`).join('');
+      let centroidRows = centroids.map((c, i) => `<tr><td>${i+1}</td><td>${c.map(v => Number(v).toFixed(3)).join(' , ')}</td></tr>`).join('');
+      document.getElementById('kmeansPanel').innerHTML = `
+        <div class="stats">
+          <div class="stat-box"><div class="label">الخوارزمية</div><div class="value" style="font-size:18px;">K-Means</div></div>
+          <div class="stat-box"><div class="label">عدد العناقيد</div><div class="value">${centroids.length}</div></div>
+          <div class="stat-box"><div class="label">عدد السجلات</div><div class="value">${assignments.length}</div></div>
+        </div>
+        <h3>عدد العناصر في كل عنقود</h3>
+        <div class="table-wrap"><table><thead><tr><th>العنقود</th><th>عدد العناصر</th></tr></thead><tbody>${rows}</tbody></table></div>
+        <h3>مراكز العناقيد</h3>
+        <div class="table-wrap"><table><thead><tr><th>العنقود</th><th>القيم</th></tr></thead><tbody>${centroidRows}</tbody></table></div>
+        <h3>رسم بياني</h3>
+        <canvas id="kmeansChart"></canvas>
+      `;
+      setTimeout(() => barChart('kmeansChart', keys.map(k => counts[k]), keys.map(k => 'C' + (Number(k)+1)), 'K-Means Clusters'), 0);
+    }
+
+    function renderAprioriResult(result) {
+      let freqRows = result.frequent.map(r => `<tr><td>${escapeHtml(r.items.join(' , '))}</td><td>${(r.support*100).toFixed(2)}%</td></tr>`).join('');
+      if (!freqRows) freqRows = '<tr><td colspan="2">لا توجد مجموعات متكررة حسب القيم الحالية</td></tr>';
+      let ruleRows = result.rules.map(r => `<tr><td>${escapeHtml(r.antecedent.join(' , '))}</td><td>${escapeHtml(r.consequent.join(' , '))}</td><td>${(r.support*100).toFixed(2)}%</td><td>${(r.confidence*100).toFixed(2)}%</td></tr>`).join('');
+      if (!ruleRows) ruleRows = '<tr><td colspan="4">لا توجد قواعد توافق الشروط الحالية</td></tr>';
+      document.getElementById('aprioriPanel').innerHTML = `
+        <div class="stats">
+          <div class="stat-box"><div class="label">الخوارزمية</div><div class="value" style="font-size:18px;">Apriori</div></div>
+          <div class="stat-box"><div class="label">Frequent Itemsets</div><div class="value">${result.frequent.length}</div></div>
+          <div class="stat-box"><div class="label">Association Rules</div><div class="value">${result.rules.length}</div></div>
+        </div>
+        <h3>Frequent Itemsets</h3>
+        <div class="table-wrap"><table><thead><tr><th>العناصر</th><th>الدعم</th></tr></thead><tbody>${freqRows}</tbody></table></div>
+        <h3>Association Rules</h3>
+        <div class="table-wrap"><table><thead><tr><th>Antecedent</th><th>Consequent</th><th>Support</th><th>Confidence</th></tr></thead><tbody>${ruleRows}</tbody></table></div>
+        <h3>رسم بياني</h3>
+        <canvas id="aprioriChart"></canvas>
+      `;
+      setTimeout(() => barChart('aprioriChart', [result.frequent.length, result.rules.length], ['Itemsets','Rules'], 'Apriori Summary'), 0);
+    }
+
+    function renderCorrelationResult(results, threshold) {
+      const selected = results.filter(r => Math.abs(r.corr) >= threshold);
+      let rows = results.map(r => `<tr><td>${escapeHtml(r.feature)}</td><td>${r.corr.toFixed(4)}</td><td>${Math.abs(r.corr) >= threshold ? 'مختار' : 'مستبعد'}</td></tr>`).join('');
+      document.getElementById('corrPanel').innerHTML = `
+        <div class="stats">
+          <div class="stat-box"><div class="label">الميزات المختارة</div><div class="value">${selected.length}</div></div>
+          <div class="stat-box"><div class="label">إجمالي الميزات</div><div class="value">${results.length}</div></div>
+          <div class="stat-box"><div class="label">Threshold</div><div class="value">${threshold}</div></div>
+        </div>
+        <h3>نتائج Correlation Feature Selection</h3>
+        <div class="table-wrap"><table><thead><tr><th>الميزة</th><th>Correlation</th><th>الحالة</th></tr></thead><tbody>${rows}</tbody></table></div>
+        <h3>رسم بياني</h3>
+        <canvas id="corrChart"></canvas>
+      `;
+      setTimeout(() => barChart('corrChart', results.slice(0,10).map(r => Math.abs(r.corr)), results.slice(0,10).map(r => r.feature.slice(0,8)), 'Top Correlated Features'), 0);
+    }
+
+    document.getElementById('runClassification').addEventListener('click', () => {
+      if (!state.rows.length) return alert('قم بتحميل ملف CSV أولاً');
+      const target = targetColumn.value;
+      const features = getSelectedFeatures();
+      const textCol = textColumn.value;
+      const useText = document.getElementById('useTextVectors').value === 'yes';
+      const lexicon = parseLexicon(document.getElementById('lexiconInput').value);
+      if (!target) return alert('اختر العمود الهدف');
+      if (!features.length) return alert('اختر أعمدة الخصائص');
+      if (features.includes(target)) return alert('العمود الهدف يجب ألا يكون ضمن الخصائص');
+      const encoded = encodeDataset(state.rows, features, target, textCol, useText, lexicon);
+      const { X, y, meta, vocabulary } = encoded;
+      const split = splitDataset(X, y, Number(testRatio.value) / 100);
+      if (!split.XTrain.length || !split.XTest.length) return alert('البيانات غير كافية بعد التقسيم');
+
+      const k = Math.max(1, Number(document.getElementById('knnK').value) || 3);
+      const knnPred = knnPredict(split.XTrain, split.yTrain, split.XTest, k);
+      renderClassifierResult('knn', 'KNN', split.yTest, knnPred, `<div class="note ok">K = ${k}</div>`);
+
+      const maxDepth = Math.max(1, Number(document.getElementById('treeDepth').value) || 4);
+      const tree = buildTree(split.XTrain, split.yTrain, 0, maxDepth);
+      const dtPred = split.XTest.map(r => predictTree(tree, r));
+      renderClassifierResult('dt', 'Decision Tree', split.yTest, dtPred, `<div class="note ok">Max Depth = ${maxDepth}</div>`);
+
+      const lrModel = trainOVRLogisticRegression(split.XTrain, split.yTrain);
+      const lrPred = predictOVR(lrModel, split.XTest);
+      renderClassifierResult('lr', 'Logistic Regression', split.yTest, lrPred, `<div class="note ok">One-vs-Rest Multi-class LR</div>`);
+
+      lastClf = {
+        features,
+        target,
+        textCol,
+        useText,
+        lexicon,
+        meta,
+        vocabulary,
+        k,
+        XTrain: split.XTrain,
+        yTrain: split.yTrain,
+        tree,
+        lrModel,
+      };
+      document.getElementById('classificationExtras').style.display = 'block';
+      buildPredictFormFields();
+      document.getElementById('predictResults').innerHTML = '';
+      refreshExportedCode();
+
+      activateMain('classification');
+      activateSub('knn');
+    });
+
+    document.getElementById('runClustering').addEventListener('click', () => {
+      if (!state.rows.length) return alert('قم بتحميل ملف CSV أولاً');
+      const features = getSelectedFeatures();
+      const textCol = textColumn.value;
+      const useText = document.getElementById('useTextVectors').value === 'yes';
+      const lexicon = parseLexicon(document.getElementById('lexiconInput').value);
+      if (!features.length) return alert('اختر أعمدة الخصائص للتجميع');
+      const { X } = encodeDataset(state.rows, features, null, textCol, useText, lexicon);
+      const k = Math.max(2, Number(document.getElementById('clusterK').value) || 3);
+      if (X.length < k) return alert('عدد السجلات أقل من عدد العناقيد المطلوبة');
+      const result = kmeans(X, k);
+      renderKmeansResult(result.assignments, result.centroids);
+      activateMain('clustering');
+    });
+
+    document.getElementById('runApriori').addEventListener('click', () => {
+      if (!state.rows.length) return alert('قم بتحميل ملف CSV أولاً');
+      const itemCandidates = state.columns.filter(c => state.rows.some(r => String(r[c] || '').includes('|')));
+      if (!itemCandidates.length) return alert('لا يوجد عمود مناسب لـ Apriori. استخدم عمودًا يحتوي عناصر مفصولة بالرمز |');
+      const transactions = getTransactions(itemCandidates[0]);
+      const result = apriori(transactions, Number(document.getElementById('minSupport').value), Number(document.getElementById('minConfidence').value));
+      renderAprioriResult(result);
+      activateMain('roleMining');
+    });
+
+    document.getElementById('runFeatureSelection').addEventListener('click', () => {
+      if (!state.rows.length) return alert('قم بتحميل ملف CSV أولاً');
+      const target = targetColumn.value;
+      const features = getSelectedFeatures();
+      const textCol = textColumn.value;
+      const useText = document.getElementById('useTextVectors').value === 'yes';
+      const lexicon = parseLexicon(document.getElementById('lexiconInput').value);
+      if (!target) return alert('اختر العمود الهدف أولاً');
+      if (!features.length) return alert('اختر أعمدة الخصائص');
+      const threshold = Number(document.getElementById('corrThreshold').value);
+      const results = featureSelectionByCorrelation(state.rows, features, target, textCol, useText, lexicon);
+      renderCorrelationResult(results, threshold);
+      activateMain('featureSelection');
+    });
+
+    function activateMain(id) {
+      document.querySelectorAll('[data-main]').forEach(btn => btn.classList.toggle('active', btn.dataset.main === id));
+      document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === id));
+    }
+    function activateSub(id) {
+      document.querySelectorAll('[data-sub]').forEach(btn => btn.classList.toggle('active', btn.dataset.sub === id));
+      document.querySelectorAll('#classification .subpanel').forEach(p => p.classList.toggle('active', p.id === id));
+    }
+
+    document.querySelectorAll('[data-main]').forEach(btn => btn.addEventListener('click', () => activateMain(btn.dataset.main)));
+    document.querySelectorAll('[data-sub]').forEach(btn => btn.addEventListener('click', () => activateSub(btn.dataset.sub)));
+
+    document.getElementById('runSinglePredict').addEventListener('click', runSingleRowPredict);
+    document.querySelectorAll('#codeExportTabs [data-code]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeCodeExport = btn.dataset.code;
+        document.querySelectorAll('#codeExportTabs [data-code]').forEach(b => b.classList.toggle('active', b === btn));
+        refreshExportedCode();
+      });
+    });
+    document.getElementById('copySourceCode').addEventListener('click', async () => {
+      const ta = document.getElementById('exportedSourceCode');
+      if (!ta.value) return;
+      try {
+        await navigator.clipboard.writeText(ta.value);
+        alert('تم نسخ الكود.');
+      } catch (e) {
+        ta.select();
+        document.execCommand('copy');
+        alert('تم نسخ الكود.');
+      }
+    });
+  </script>
+</body>
+</html>
+
