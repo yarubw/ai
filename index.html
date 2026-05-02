@@ -9,9 +9,11 @@
     * { box-sizing: border-box; }
     body {
       margin: 0;
+      padding-bottom: 5.5rem;
       font-family: Tahoma, Arial, sans-serif;
       background: linear-gradient(135deg, #eef4ff, #f8fbff);
       color: #1f2937;
+      min-height: 100vh;
     }
     .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
     .hero, .card {
@@ -101,6 +103,51 @@
       font-size: 13px;
     }
     .checkbox-item input { width: auto; margin: 0; }
+    .settings-details {
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      margin-bottom: 12px;
+      background: #f8fafc;
+      overflow: hidden;
+    }
+    .settings-details summary {
+      cursor: pointer;
+      padding: 12px 14px;
+      font-weight: bold;
+      font-size: 14px;
+      list-style: none;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: #0f172a;
+    }
+    .settings-details summary::-webkit-details-marker { display: none; }
+    .settings-details summary::after {
+      content: "▼";
+      font-size: 10px;
+      color: #64748b;
+      transition: transform 0.2s;
+    }
+    .settings-details[open] summary::after {
+      transform: rotate(-180deg);
+    }
+    .settings-details .details-inner {
+      padding: 12px 14px 16px;
+      border-top: 1px solid #e2e8f0;
+      background: #fff;
+    }
+    .settings-details .details-inner .row,
+    .settings-details .details-inner .three { margin-bottom: 0; }
+    .settings-details .details-inner label { margin-top: 4px; }
+    .clean-hint {
+      margin: 0 0 12px;
+      font-size: 13px;
+      color: #64748b;
+      line-height: 1.65;
+    }
+    .clean-actions button { margin-bottom: 8px; }
     button {
       border: 0;
       border-radius: 12px;
@@ -166,7 +213,23 @@
       border-radius: 16px;
       margin-top: 14px;
     }
-    .footer { margin-top: 18px; font-size: 13px; color: #64748b; text-align: center; }
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 200;
+      margin: 0;
+      padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px));
+      font-size: 14px;
+      color: #475569;
+      text-align: center;
+      line-height: 1.75;
+      border-top: 1px solid #e2e8f0;
+      background: rgba(248, 250, 252, 0.97);
+      box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.08);
+      backdrop-filter: blur(10px);
+    }
     @media (max-width: 1050px) {
       .main-grid { grid-template-columns: 1fr; }
       .row, .three, .checkbox-grid { grid-template-columns: 1fr; }
@@ -200,61 +263,100 @@
         <label>أعمدة الخصائص العامة</label>
         <div id="featureColumns" class="checkbox-grid"></div>
 
-        <div class="row">
-          <div>
-            <label>نسبة الاختبار: <span id="testRatioValue">20%</span></label>
-            <input type="range" id="testRatio" min="10" max="50" step="5" value="20" />
+        <details class="settings-details">
+          <summary>تنظيف البيانات — حذف الفراغات، المتوسط، الوسيط، الوضع</summary>
+          <div class="details-inner clean-actions">
+            <p class="clean-hint">تُطبَّق على البيانات المحمّلة حالياً. احتفظ بنسخة من ملف CSV إن لزم. بعد التنظيف قد تحتاج لتشغيل التصنيف من جديد.</p>
+            <button type="button" class="btn-secondary" id="cleanRemoveEmptyRows">حذف الصفوف الفارغة كلياً</button>
+            <button type="button" class="btn-secondary" id="cleanRemoveEmptyCols">حذف الأعمدة الفارغة كلياً</button>
+            <label>تعبئة الخلايا الفارغة</label>
+            <select id="cleanFillStrategy">
+              <option value="">— اختر استراتيجية ثم اضغط «تطبيق التعبئة» —</option>
+              <option value="mean_mode">متوسط (أعمدة رقمية) + الوضع (نص / فئة)</option>
+              <option value="median_mode">وسيط (أعمدة رقمية) + الوضع (نص / فئة)</option>
+              <option value="mean">متوسط للأعمدة الرقمية فقط</option>
+              <option value="median">وسيط للأعمدة الرقمية فقط</option>
+              <option value="mode">الوضع (الأكثر تكراراً) للأعمدة غير الرقمية فقط</option>
+            </select>
+            <button type="button" class="btn-orange" id="cleanApplyFill">تطبيق التعبئة</button>
+            <div id="cleaningReport" class="note ok" style="display:none; margin-top:10px; margin-bottom:0;"></div>
           </div>
-          <div>
-            <label>عدد السجلات المعروضة</label>
-            <input type="number" id="previewLimit" min="5" max="30" value="8" />
-          </div>
-        </div>
+        </details>
 
-        <div class="three">
-          <div>
-            <label>K في KNN</label>
-            <input type="number" id="knnK" min="1" max="25" value="3" />
+        <details class="settings-details">
+          <summary>نسبة الاختبار وعدد السجلات المعروضة</summary>
+          <div class="details-inner">
+            <div class="row">
+              <div>
+                <label>نسبة الاختبار: <span id="testRatioValue">20%</span></label>
+                <input type="range" id="testRatio" min="10" max="50" step="5" value="20" />
+              </div>
+              <div>
+                <label>عدد السجلات المعروضة</label>
+                <input type="number" id="previewLimit" min="5" max="30" value="8" />
+              </div>
+            </div>
           </div>
-          <div>
-            <label>عمق الشجرة DT</label>
-            <input type="number" id="treeDepth" min="1" max="8" value="4" />
-          </div>
-          <div>
-            <label>عدد عناقيد K-Means</label>
-            <input type="number" id="clusterK" min="2" max="10" value="3" />
-          </div>
-        </div>
+        </details>
 
-        <div class="three">
-          <div>
-            <label>الحد الأدنى للدعم Apriori</label>
-            <input type="number" id="minSupport" min="0.05" max="1" step="0.05" value="0.3" />
+        <details class="settings-details">
+          <summary>K في KNN، عمق الشجرة DT، عدد عناقيد K-Means</summary>
+          <div class="details-inner">
+            <div class="three">
+              <div>
+                <label>K في KNN</label>
+                <input type="number" id="knnK" min="1" max="25" value="3" />
+              </div>
+              <div>
+                <label>عمق الشجرة DT</label>
+                <input type="number" id="treeDepth" min="1" max="8" value="4" />
+              </div>
+              <div>
+                <label>عدد عناقيد K-Means</label>
+                <input type="number" id="clusterK" min="2" max="10" value="3" />
+              </div>
+            </div>
           </div>
-          <div>
-            <label>الحد الأدنى للثقة</label>
-            <input type="number" id="minConfidence" min="0.05" max="1" step="0.05" value="0.6" />
+        </details>
+
+        <details class="settings-details">
+          <summary>الحد الأدنى للدعم Apriori، الحد الأدنى للثقة، حد الارتباط Correlation</summary>
+          <div class="details-inner">
+            <div class="three">
+              <div>
+                <label>الحد الأدنى للدعم Apriori</label>
+                <input type="number" id="minSupport" min="0.05" max="1" step="0.05" value="0.3" />
+              </div>
+              <div>
+                <label>الحد الأدنى للثقة</label>
+                <input type="number" id="minConfidence" min="0.05" max="1" step="0.05" value="0.6" />
+              </div>
+              <div>
+                <label>حد الارتباط Correlation</label>
+                <input type="number" id="corrThreshold" min="0.05" max="1" step="0.05" value="0.2" />
+              </div>
+            </div>
           </div>
-          <div>
-            <label>حد الارتباط Correlation</label>
-            <input type="number" id="corrThreshold" min="0.05" max="1" step="0.05" value="0.2" />
+        </details>
+
+        <details class="settings-details">
+          <summary>معالجة النصوص — عمود النصوص، القاموس Lexical، الاحتفاظ بالنص</summary>
+          <div class="details-inner">
+            <label>عمود النصوص</label>
+            <select id="textColumn">
+              <option value="">اختياري</option>
+            </select>
+
+            <label>قاموس Lexical للتصنيف النصي (كل سطر بصيغة: الفئة: كلمة1, كلمة2)</label>
+            <textarea id="lexiconInput" placeholder="positive: good, excellent, nice&#10;negative: bad, poor, weak"></textarea>
+
+            <label>الاحتفاظ بالنص ضمن الخصائص</label>
+            <select id="useTextVectors">
+              <option value="yes">نعم</option>
+              <option value="no">لا</option>
+            </select>
           </div>
-        </div>
-
-        <h3>معالجة النصوص</h3>
-        <label>عمود النصوص</label>
-        <select id="textColumn">
-          <option value="">اختياري</option>
-        </select>
-
-        <label>قاموس Lexical للتصنيف النصي (كل سطر بصيغة: الفئة: كلمة1, كلمة2)</label>
-        <textarea id="lexiconInput" placeholder="positive: good, excellent, nice&#10;negative: bad, poor, weak"></textarea>
-
-        <label>الاحتفاظ بالنص ضمن الخصائص</label>
-        <select id="useTextVectors">
-          <option value="yes">نعم</option>
-          <option value="no">لا</option>
-        </select>
+        </details>
 
         <button class="btn-primary" id="runClassification">تشغيل التصنيف</button>
         <button class="btn-orange" id="runFeatureSelection">تشغيل Feature Selection</button>
@@ -332,9 +434,9 @@
         </div>
       </div>
     </div>
-
-    <div class="footer">نسخة تعليمية بملف واحد HTML CSS JS</div>
   </div>
+
+  <footer class="footer">برمجة وتصميم م. يعرب احمد وحشة - مدرسة ابن تيمية الثانوية الشاملة للبنين</footer>
 
   <script>
     const state = {
@@ -449,6 +551,10 @@
 
     document.getElementById('previewLimit').addEventListener('input', renderPreview);
 
+    document.getElementById('cleanRemoveEmptyRows').addEventListener('click', removeEmptyRowsAction);
+    document.getElementById('cleanRemoveEmptyCols').addEventListener('click', removeEmptyColumnsAction);
+    document.getElementById('cleanApplyFill').addEventListener('click', applyFillStrategy);
+
     function renderStats() {
       datasetStats.innerHTML = `
         <div class="stat-box"><div class="label">عدد الصفوف</div><div class="value">${state.rows.length}</div></div>
@@ -460,6 +566,141 @@
     function isNumeric(value) {
       if (value === null || value === undefined || value === '') return false;
       return !isNaN(Number(value));
+    }
+
+    function cellIsEmpty(v) {
+      return String(v ?? '').trim() === '';
+    }
+
+    function columnKind(col) {
+      const vals = state.rows.map(r => r[col]).filter(v => !cellIsEmpty(v));
+      if (!vals.length) return 'empty';
+      if (vals.every(v => isNumeric(v))) return 'numeric';
+      return 'categorical';
+    }
+
+    function numericMeanMedian(col) {
+      const nums = state.rows.map(r => r[col]).filter(v => !cellIsEmpty(v) && isNumeric(v)).map(Number);
+      if (!nums.length) return null;
+      const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
+      const sorted = [...nums].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      const median = sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+      return { mean, median };
+    }
+
+    function columnModeCategorical(col) {
+      const counts = {};
+      state.rows.forEach(r => {
+        const v = String(r[col] ?? '').trim();
+        if (!v) return;
+        counts[v] = (counts[v] || 0) + 1;
+      });
+      const keys = Object.keys(counts);
+      if (!keys.length) return null;
+      keys.sort((a, b) => counts[b] - counts[a]);
+      return keys[0];
+    }
+
+    function showCleaningReport(text, ok = true) {
+      const el = document.getElementById('cleaningReport');
+      if (!el) return;
+      el.style.display = 'block';
+      el.className = ok ? 'note ok' : 'note';
+      el.textContent = text;
+    }
+
+    function afterCleanRefresh(msg, ok = true) {
+      lastClf = null;
+      const ex = document.getElementById('classificationExtras');
+      if (ex) ex.style.display = 'none';
+      if (!state.rows.length || !state.columns.length) {
+        renderColumns();
+        renderPreview();
+        renderStats();
+        setStatus(msg || 'لا توجد بيانات.', ok);
+        showCleaningReport(msg, ok);
+        return;
+      }
+      const savedTarget = targetColumn.value && state.columns.includes(targetColumn.value) ? targetColumn.value : '';
+      const savedText = textColumn.value && state.columns.includes(textColumn.value) ? textColumn.value : '';
+      renderColumns();
+      if (savedTarget) targetColumn.value = savedTarget;
+      if (savedText) textColumn.value = savedText;
+      syncFeatureSelection();
+      renderPreview();
+      renderStats();
+      setStatus(`تم تحديث البيانات. الصفوف: ${state.rows.length}، الأعمدة: ${state.columns.length}`, true);
+      showCleaningReport(msg, ok);
+    }
+
+    function removeEmptyRowsAction() {
+      if (!state.rows.length) return alert('لا توجد بيانات للتنظيف');
+      const cols = state.columns;
+      const before = state.rows.length;
+      state.rows = state.rows.filter(r => !cols.every(c => cellIsEmpty(r[c])));
+      const removed = before - state.rows.length;
+      if (!state.rows.length) {
+        state.columns = [];
+        afterCleanRefresh('تم حذف كل الصفوف (لم يبق صف يحتوي بيانات).', false);
+        return;
+      }
+      afterCleanRefresh(removed ? `تم حذف ${removed} صفاً كانت جميع حقوله فارغة.` : 'لا توجد صفوف فارغة كلياً للحذف.');
+    }
+
+    function removeEmptyColumnsAction() {
+      if (!state.rows.length) return alert('لا توجد بيانات للتنظيف');
+      const cols = [...state.columns];
+      const emptyCols = cols.filter(col => state.rows.every(r => cellIsEmpty(r[col])));
+      if (!emptyCols.length) {
+        showCleaningReport('لا توجد أعمدة فارغة بالكامل.');
+        return;
+      }
+      emptyCols.forEach(col => state.rows.forEach(r => { delete r[col]; }));
+      state.columns = cols.filter(c => !emptyCols.includes(c));
+      afterCleanRefresh(`تم حذف ${emptyCols.length} عموداً فارغاً: ${emptyCols.join('، ')}`);
+    }
+
+    function applyFillStrategy() {
+      if (!state.rows.length) return alert('لا توجد بيانات للتنظيف');
+      const strat = document.getElementById('cleanFillStrategy').value;
+      if (!strat) return alert('اختر استراتيجية التعبئة من القائمة');
+      const useMean = strat === 'mean' || strat === 'mean_mode';
+      const useMedian = strat === 'median' || strat === 'median_mode';
+      const useModeOnly = strat === 'mode';
+      const useModeCombo = strat === 'mean_mode' || strat === 'median_mode';
+      let filled = 0;
+      state.columns.forEach(col => {
+        const kind = columnKind(col);
+        if (kind === 'empty') return;
+        if (kind === 'numeric' && (useMean || useMedian)) {
+          const mm = numericMeanMedian(col);
+          if (!mm) return;
+          const val = useMedian ? mm.median : mm.mean;
+          const strVal = Number.isFinite(val) && Math.abs(val - Math.round(val)) < 1e-9 ? String(Math.round(val)) : String(val);
+          state.rows.forEach(r => {
+            if (cellIsEmpty(r[col])) {
+              r[col] = strVal;
+              filled++;
+            }
+          });
+        }
+        if (kind === 'categorical' && (useModeOnly || useModeCombo)) {
+          const m = columnModeCategorical(col);
+          if (m == null) return;
+          state.rows.forEach(r => {
+            if (cellIsEmpty(r[col])) {
+              r[col] = m;
+              filled++;
+            }
+          });
+        }
+      });
+      if (!filled) {
+        showCleaningReport('لا توجد خلايا فارغة تطابق الاستراتيجية، أو لا يوجد وضع (تكرار) لعمود نصي كله فارغ.');
+        return;
+      }
+      afterCleanRefresh(`تم تعبئة ${filled} خلية فارغة وفق الاستراتيجية المختارة.`);
     }
 
     function escapeHtml(value) {
